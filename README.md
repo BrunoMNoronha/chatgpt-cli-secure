@@ -30,6 +30,14 @@
   - `update.sh` baixa e instala a atualização a partir de GitHub, URL ou arquivo local.
   - A GUI integra o fluxo de verificação/instalação de atualização.
 
+```
+            UpdateStrategy
+           /      |      \
+GitHubStrategy URLStrategy FileStrategy
+```
+
+O `update.py` usa o **Strategy Pattern** para escolher a fonte de atualização em tempo de execução. Um dicionário de fábricas substitui longas cadeias de `if`/`elif`, permitindo inclusão de novas estratégias com custo constante de despacho.
+
 ## Dependências
 
 - **Obrigatórias**: `bash`, `python3` com biblioteca `requests`, `openssl`, `curl`, `zenity`.
