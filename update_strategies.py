@@ -29,10 +29,10 @@ def _safe_extract(tar: tarfile.TarFile, path: Path) -> None:
 
 
 class UpdateStrategy(ABC):
-    """Interface for update strategies."""
+    """Interface for update strategies following the Strategy pattern."""
 
     @abstractmethod
-    def install(self) -> None:
+    def run(self) -> None:
         """Execute the update process."""
 
 
@@ -55,7 +55,7 @@ class FileStrategy(UpdateStrategy):
         if digest != expected:
             raise ValueError("SHA256 mismatch")
 
-    def install(self) -> None:  # type: ignore[override]
+    def run(self) -> None:  # type: ignore[override]
         self._verify_hash()
         with tempfile.TemporaryDirectory() as tmp:
             with tarfile.open(self.path) as tar:
@@ -66,7 +66,7 @@ class FileStrategy(UpdateStrategy):
 
 
 @dataclass
-class UrlStrategy(UpdateStrategy):
+class URLStrategy(UpdateStrategy):
     """Download update package from URL and install it."""
 
     url: str
@@ -80,11 +80,11 @@ class UrlStrategy(UpdateStrategy):
         except Exception:
             return None
 
-    def install(self) -> None:  # type: ignore[override]
+    def run(self) -> None:  # type: ignore[override]
         with tempfile.TemporaryDirectory() as tmp:
             file_path = Path(tmp) / "package.tar"
             sha256 = self._download(file_path)
-            FileStrategy(file_path, sha256).install()
+            FileStrategy(file_path, sha256).run()
 
 
 @dataclass
@@ -93,7 +93,7 @@ class GitHubStrategy(UpdateStrategy):
 
     check_script: Path = Path("check-update.sh")
 
-    def install(self) -> None:  # type: ignore[override]
+    def run(self) -> None:  # type: ignore[override]
         result = subprocess.run(
             [str(self.check_script), "--machine-read"],
             capture_output=True,
@@ -110,4 +110,4 @@ class GitHubStrategy(UpdateStrategy):
         url = info.get("NEW_URL")
         if not url:
             raise RuntimeError("Missing NEW_URL from check-update output")
-        UrlStrategy(url).install()
+        URLStrategy(url).run()

@@ -11,7 +11,7 @@ import sys
 import pytest
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from update_strategies import FileStrategy, UrlStrategy, GitHubStrategy, _safe_extract
+from update_strategies import FileStrategy, GitHubStrategy, URLStrategy, _safe_extract
 
 
 def _create_package(tmp_dir: Path, script: str) -> Path:
@@ -39,7 +39,7 @@ def test_file_strategy_executes_install(tmp_path: Path) -> None:
     out = tmp_path / "out.txt"
     os.environ["OUTPUT"] = str(out)
     try:
-        FileStrategy(tar_path).install()
+        FileStrategy(tar_path).run()
     finally:
         os.environ.pop("OUTPUT")
     assert out.read_text().strip() == "ok"
@@ -61,7 +61,7 @@ def test_url_strategy_downloads_and_installs(tmp_path: Path, monkeypatch: pytest
     out = tmp_path / "out.txt"
     os.environ["OUTPUT"] = str(out)
     try:
-        UrlStrategy(url).install()
+        URLStrategy(url).run()
     finally:
         os.environ.pop("OUTPUT")
     assert out.read_text().strip() == "ok"
@@ -91,7 +91,7 @@ def test_github_strategy_uses_check_script(tmp_path: Path, monkeypatch: pytest.M
     out = tmp_path / "out.txt"
     os.environ["OUTPUT"] = str(out)
     try:
-        GitHubStrategy().install()
+        GitHubStrategy().run()
     finally:
         os.environ.pop("OUTPUT")
     assert out.read_text().strip() == "ok"
