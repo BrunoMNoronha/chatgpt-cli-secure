@@ -1,4 +1,4 @@
 #!/bin/sh
 # Wrapper para gpt_cli.py
-SCRIPT_DIR="$HOME/Documentos/chatgpt-cli"
-exec python3 "$SCRIPT_DIR/gpt_cli.py" "$@"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+exec python3 "$SCRIPT_DIR/../gpt_cli.py" "$@"
