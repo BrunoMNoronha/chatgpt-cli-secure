@@ -8,6 +8,7 @@ import os
 import subprocess
 import sys
 import time
+from configparser import ConfigParser, MissingSectionHeaderError, ParsingError
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -24,21 +25,25 @@ HISTORY_FILE = STATE_DIR / 'history.jsonl'
 SESSIONS_DIR = STATE_DIR / 'sessions'
 DEFAULT_REQUEST_TIMEOUT: float = 30.0
 
+
 def read_config() -> Dict[str, str]:
-    config: Dict[str, str] = {}
-    if CONFIG_PATH.exists():
-        try:
-            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#') or '=' not in line:
-                        continue
-                    key, val = line.split('=', 1)
-                    val = val.strip().strip('"')
-                    config[key] = val
-        except Exception:
-            pass
-    return config
+    """Lê arquivo de configuração do usuário usando ``ConfigParser``.
+
+    Utiliza o padrão *EAFP* ("Easier to Ask Forgiveness than Permission") para
+    tentativa de leitura e converte o conteúdo em ``dict``. Uma alternativa mais
+    performática seria o parse manual linha a linha, como antes, porém menos
+    robusta.
+    """
+    parser = ConfigParser()
+    parser.optionxform = str  # preserva capitalização das chaves
+    if not CONFIG_PATH.exists():
+        return {}
+    try:
+        content: str = CONFIG_PATH.read_text(encoding="utf-8")
+        parser.read_string("[DEFAULT]\n" + content)
+    except (OSError, MissingSectionHeaderError, ParsingError):
+        return {}
+    return {k: v.strip().strip('"') for k, v in parser["DEFAULT"].items()}
 
 def get_api_key() -> str:
     api_key = os.environ.get("OPENAI_API_KEY")
