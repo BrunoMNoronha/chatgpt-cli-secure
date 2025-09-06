@@ -26,7 +26,7 @@
   - O histórico e as sessões são armazenados respeitando os padrões XDG (em `~/.local/state/chatgpt-cli/`).
 
 - **Sistema de atualização**:
-  - `check-update.sh` verifica se há nova versão em GitHub ou em URL configurada.
+  - `check-update.sh` verifica se há nova versão em GitHub ou em URL configurada, usando `curl -fI` para obter `ETag` ou `Last-Modified`. O token retornado é armazenado em `~/.local/state/chatgpt-cli/` e reutilizado em execuções futuras, baixando detalhes completos apenas quando houver mudança.
   - `update.sh` baixa e instala a atualização a partir de GitHub, URL ou arquivo local.
   - A GUI integra o fluxo de verificação/instalação de atualização.
 
