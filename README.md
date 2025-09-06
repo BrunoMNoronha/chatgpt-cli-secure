@@ -211,6 +211,40 @@ bash uninstall.sh --purge
 - Outros processos rodando com o mesmo usuário podem, em teoria, listar variáveis de ambiente de processos filhos enquanto eles estão ativos. Evite executar múltiplas instâncias simultâneas e mantenha o sistema atualizado.
 - Se desejar trocar de modelo ou temperatura temporariamente, defina `OPENAI_MODEL` e/ou `OPENAI_TEMP` somente no momento da execução e não deixe essas variáveis permanentemente expostas.
 
+### Senha mestra e gerenciamento da chave
+
+#### Uso de passphrases fortes
+```bash
+# Gera uma passphrase aleatória com 48 bytes
+openssl rand -base64 48
+
+# Alternativa mais performática usando /dev/urandom e filtros simples
+tr -dc '[:alnum:]' < /dev/urandom | head -c 64; echo
+```
+Aumente a entropia combinando letras maiúsculas, minúsculas, números e símbolos. Armazene a senha em um gerenciador seguro e evite reutilizá-la.
+
+#### Verificação de permissões em `secret.enc`
+```bash
+# Confere e corrige permissões restritivas
+ls -l ~/.local/share/chatgpt-cli/secret.enc
+chmod 600 ~/.local/share/chatgpt-cli/secret.enc
+
+# Alternativa mais rápida para checar o modo do arquivo
+stat -c '%a %n' ~/.local/share/chatgpt-cli/secret.enc
+```
+O arquivo criptografado deve ser legível e gravável apenas pelo usuário. Permissões mais amplas podem expor a chave a terceiros.
+
+#### Rotina de troca da senha ou revogação da chave
+```bash
+# Remove o segredo atual e executa o assistente novamente
+rm ~/.local/share/chatgpt-cli/secret.enc
+bash ~/.local/share/chatgpt-cli/gpt-secure-setup.sh
+
+# Alternativa mais segura (sobrescreve antes de apagar)
+shred -u ~/.local/share/chatgpt-cli/secret.enc
+```
+Refaça o processo sempre que suspeitar de comprometimento. A opção com `shred` é mais lenta, porém ajuda a impedir a recuperação do arquivo apagado.
+
 ## Teste funcional
 
 1. **Instalação**:
