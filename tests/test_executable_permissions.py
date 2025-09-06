@@ -9,12 +9,11 @@ from .util import assert_exec
 
 # Explicit enumeration avoids false positives and acts as a simple whitelist.
 # ``Path.rglob('*.sh')`` could discover scripts dynamically and be more
-# performant in large trees, but manual listing keeps intent clear.
+# performant in large trees, mas a listagem manual mantém a intenção clara.
 EXECUTABLES: List[Path] = [
     Path("check-update.sh"),
     Path("gpt-gui.sh"),
     Path("gpt-secure-setup.sh"),
-    Path("gpt_cli.py"),
     Path("install.sh"),
     Path("uninstall.sh"),
     Path("update.sh"),

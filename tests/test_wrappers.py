@@ -6,15 +6,19 @@ import subprocess
 from pathlib import Path
 
 
-def test_gpt_wrapper_resolves_moved_script(tmp_path: Path) -> None:
+def test_gpt_wrapper_resolves_moved_package(tmp_path: Path) -> None:
     wrapper_src: Path = Path("wrappers/gpt")
     wrapper_dest_dir: Path = tmp_path / "wrappers"
     wrapper_dest_dir.mkdir()
     wrapper_dest: Path = wrapper_dest_dir / "gpt"
     shutil.copy(wrapper_src, wrapper_dest)
 
-    dummy_script: Path = tmp_path / "gpt_cli.py"
-    dummy_script.write_text("print('gpt_cli_ok')\n")
+    pkg_dir: Path = tmp_path / "chatgpt_cli"
+    pkg_dir.mkdir()
+    init: Path = pkg_dir / "__init__.py"
+    init.write_text("def main() -> None:\n    print('gpt_cli_ok')\n")
+    main_file: Path = pkg_dir / "__main__.py"
+    main_file.write_text("from . import main\nmain()\n")
 
     wrapper_dest.chmod(wrapper_dest.stat().st_mode | stat.S_IEXEC)
 

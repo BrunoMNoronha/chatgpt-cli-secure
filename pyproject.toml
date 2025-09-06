@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chatgpt-cli-secure"
+version = "1.2.1"
+description = "Secure ChatGPT command line interface"
+authors = [{ name = "ChatGPT CLI" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "requests>=2.31.0",
+]
+
+[project.scripts]
+gpt = "chatgpt_cli:main"

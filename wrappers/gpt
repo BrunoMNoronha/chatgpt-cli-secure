@@ -1,24 +1,29 @@
 #!/usr/bin/env python3
-"""Wrapper to execute gpt_cli.py using the current Python interpreter."""
+"""Wrapper to execute ``chatgpt_cli`` as a module using the current Python interpreter."""
 
 from __future__ import annotations
 
 import os
 import sys
 from pathlib import Path
-from typing import NoReturn
+from typing import Dict, NoReturn
+
 
 def main() -> NoReturn:
-    """Run the CLI script relative to this wrapper.
+    """Run the package entry point relative to this wrapper.
 
-    Uses ``os.execv`` to replace the current process with ``gpt_cli.py``,
-    avoiding the overhead of spawning a child process. An alternative is
-    ``subprocess.run`` which offers more control but is slightly slower due
-    to process creation.
+    Emprega ``os.execvpe`` para substituir o processo atual por
+    ``python -m chatgpt_cli``, eliminando overhead de criação de filho. Uma
+    alternativa, um pouco mais lenta porém mais controlável, seria
+    ``subprocess.run``.
     """
     script_dir: Path = Path(__file__).resolve().parent
-    gpt_cli: Path = script_dir.parent / "gpt_cli.py"
-    os.execv(sys.executable, [sys.executable, str(gpt_cli), *sys.argv[1:]])
+    repo_root: Path = script_dir.parent
+    os.chdir(repo_root)
+    env: Dict[str, str] = os.environ.copy()
+    pythonpath: str = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = f"{repo_root}{os.pathsep}{pythonpath}" if pythonpath else str(repo_root)
+    os.execvpe(sys.executable, [sys.executable, "-m", "chatgpt_cli", *sys.argv[1:]], env)
 
 
 if __name__ == "__main__":

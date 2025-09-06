@@ -12,8 +12,8 @@ def test_read_config_invalid_file(tmp_path: Path, monkeypatch) -> None:
     exc.RequestException = Exception
     monkeypatch.setitem(sys.modules, "requests", dummy_requests)
     monkeypatch.setitem(sys.modules, "requests.exceptions", exc)
-    gpt_cli = importlib.import_module("gpt_cli")
+    cli = importlib.import_module("chatgpt_cli")
     config_file: Path = tmp_path / "config"
     config_file.write_text("invalid-line")
-    monkeypatch.setattr(gpt_cli, "CONFIG_PATH", config_file)
-    assert gpt_cli.read_config() == {}
+    monkeypatch.setattr(cli, "CONFIG_PATH", config_file)
+    assert cli.read_config() == {}
