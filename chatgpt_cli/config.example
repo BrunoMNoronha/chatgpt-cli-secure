@@ -1,0 +1,9 @@
+# Exemplo de configuração para chatgpt-cli-secure
+# MODEL: modelo padrão utilizado pela CLI e GUI
+MODEL="gpt-4o-mini"
+# TEMP: temperatura padrão (0 a 2)
+TEMP="0.7"
+# GH_REPO: repositório GitHub "usuario/repositorio" para checar releases
+GH_REPO=""
+# UPDATE_URL: URL com version.txt e pacote de atualização
+UPDATE_URL=""
