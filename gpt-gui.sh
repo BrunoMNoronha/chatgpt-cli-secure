@@ -18,7 +18,8 @@ if [ -z "$MASTER_PASS" ]; then
     exit 1
 fi
 
-OPENAI_API_KEY=$(openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 -salt -in "$SECRET_FILE" -pass pass:"$MASTER_PASS" 2>/dev/null || true)
+OPENAI_API_KEY=$(printf '%s' "$MASTER_PASS" | openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 -salt -in "$SECRET_FILE" -pass stdin 2>/dev/null || true)
+unset MASTER_PASS
 if [ -z "$OPENAI_API_KEY" ]; then
     zenity --error --text="Falha ao descriptografar a chave. Senha incorreta?"
     exit 1
@@ -150,7 +151,13 @@ while true; do
             ;;
         "Configurar chave")
             "$SCRIPT_DIR/gpt-secure-setup.sh"
-            OPENAI_API_KEY=$(openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 -salt -in "$SECRET_FILE" -pass pass:"$MASTER_PASS" 2>/dev/null || true)
+            MASTER_PASS=$(zenity --password --title="ChatGPT CLI Secure" --text="Digite a senha mestra para desbloquear a chave:")
+            if [ $? -ne 0 ] || [ -z "$MASTER_PASS" ]; then
+                zenity --error --text="Senha vazia."
+                continue
+            fi
+            OPENAI_API_KEY=$(printf '%s' "$MASTER_PASS" | openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 -salt -in "$SECRET_FILE" -pass stdin 2>/dev/null || true)
+            unset MASTER_PASS
             ;;
         "Sair")
             break
