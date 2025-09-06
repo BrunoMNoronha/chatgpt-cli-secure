@@ -11,6 +11,8 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from io import StringIO
+
 import requests
 from requests import Response
 from requests.exceptions import RequestException
@@ -121,17 +123,23 @@ def stream_chat_completion(
     payload: Dict[str, Any],
     timeout: float,
 ) -> str:
-    """Realiza streaming de tokens SSE para chat completions."""
+    """Realiza streaming de tokens SSE para chat completions.
+
+    Emprega o padrão *Context Manager* para garantir o fechamento seguro da
+    requisição e utiliza ``StringIO`` para evitar concatenações repetidas de
+    strings. Uma alternativa igualmente performática seria acumular tokens em
+    uma lista e aplicar ``"".join`` ao final.
+    """
     headers = {
         "Authorization": "Bearer " + api_key,
         "Content-Type": "application/json",
     }
-    response_text = ""
+    buffer: StringIO = StringIO()
     try:
         with requests.post(
             "https://api.openai.com/v1/chat/completions",
             headers=headers,
-            data=json.dumps(payload),
+            json=payload,
             stream=True,
             timeout=timeout,
         ) as r:
@@ -154,12 +162,12 @@ def stream_chat_completion(
                     c = delta.get("content")
                     if c:
                         print(c, end="", flush=True)
-                        response_text += c
+                        buffer.write(c)
             print()
     except RequestException as e:
         sys.stderr.write(f"Erro de conexão: {e}\n")
         sys.exit(1)
-    return response_text
+    return buffer.getvalue()
 
 
 def delete_uploaded_files(
