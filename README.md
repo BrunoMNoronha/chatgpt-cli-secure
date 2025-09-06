@@ -36,6 +36,21 @@
 - **Opcionais** (para copiar texto no clipboard): `xclip` (Xorg) ou `wl-clipboard` (Wayland).
 - Testado em sistemas Linux (Arch e derivados, mas compatível com qualquer distribuição que possua os utilitários acima).
 
+## Instalação rápida
+
+```bash
+sudo pacman -S --needed git curl openssl zenity python-requests
+git clone https://github.com/BrunoMNoronha/chatgpt-cli-secure.git
+cd chatgpt-cli-secure
+PREFIX_DIR=~/.local/share/chatgpt-cli bash install.sh
+bash $PREFIX_DIR/gpt-secure-setup.sh
+gpt "Olá"
+gpt-gui
+```
+
+> Use `PREFIX_DIR=/caminho/desejado` para instalar em outro diretório.
+> Após a instalação, talvez seja necessário reindexar o menu de aplicativos (ex.: `update-desktop-database ~/.local/share/applications`).
+
 ## Instalação
 
 1. Clone ou extraia este repositório e entre na pasta `chatgpt-cli-secure`.
