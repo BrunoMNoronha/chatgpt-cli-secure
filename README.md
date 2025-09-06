@@ -41,7 +41,9 @@ O `update.py` usa o **Strategy Pattern** para escolher a fonte de atualização 
 ## Dependências
 
 - **Obrigatórias**: `bash`, `python3` com biblioteca `requests`, `openssl`, `curl`, `zenity`.
-- **Opcionais** (para copiar texto no clipboard): `xclip` (Xorg) ou `wl-clipboard` (Wayland).
+- **Opcionais**:
+  - Para copiar texto no clipboard: `xclip` (Xorg) ou `wl-clipboard` (Wayland).
+  - Para instalação mais rápida: `rsync` (o script tenta usar `rsync -a --delete` e reverte para `cp` se ausente).
 - Testado em sistemas Linux (Arch e derivados, mas compatível com qualquer distribuição que possua os utilitários acima).
 
 ```bash
