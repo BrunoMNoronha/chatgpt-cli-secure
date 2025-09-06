@@ -29,7 +29,7 @@ def read_config() -> Dict[str, str]:
                     line = line.strip()
                     if not line or line.startswith('#') or '=' not in line:
                         continue
-                    key, val = line.split('=',1)
+                    key, val = line.split('=', 1)
                     val = val.strip().strip('"')
                     config[key] = val
         except Exception:
@@ -54,18 +54,27 @@ def get_api_key() -> str:
         sys.stderr.write("Senha vazia.\n")
         sys.exit(1)
     try:
-        result = subprocess.run(['openssl','enc','-d','-aes-256-cbc','-pbkdf2',
-                                 '-iter','200000','-md','sha256','-salt',
-                                 '-in', str(SECRET_PATH),
-                                 '-pass', f'pass:{password}'],
-                                check=True, capture_output=True)
-        api_key = result.stdout.decode('utf-8').strip()
-        if not api_key:
-            raise RuntimeError
-        return api_key
+        result = subprocess.run(
+            [
+                'openssl', 'enc', '-d', '-aes-256-cbc', '-pbkdf2',
+                '-iter', '200000', '-md', 'sha256', '-salt',
+                '-in', str(SECRET_PATH),
+                '-pass', 'stdin'
+            ],
+            input=password.encode(),
+            check=True,
+            capture_output=True
+        )
     except Exception:
+        del password
         sys.stderr.write("Erro: falha ao descriptografar a chave. Senha incorreta?\n")
         sys.exit(1)
+    del password
+    api_key = result.stdout.decode('utf-8').strip()
+    if not api_key:
+        sys.stderr.write("Erro: falha ao descriptografar a chave. Senha incorreta?\n")
+        sys.exit(1)
+    return api_key
 
 def load_session(name: str) -> List[Dict[str, Any]]:
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
