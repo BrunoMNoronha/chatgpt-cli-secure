@@ -3,6 +3,9 @@
 set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
 usage() {
   echo "Uso: $0 --from-github | --from-url <URL> | --from-file <arquivo>"
   exit 1
@@ -16,7 +19,6 @@ if [ "$1" == "--from-github" ]; then
     echo "Nenhuma atualização disponível."
     exit 0
   fi
-  tmp=$(mktemp -d)
   file="$tmp/package.tar.gz"
   echo "Baixando pacote de atualização..."
   curl -L -o "$file" "$url"
@@ -31,7 +33,6 @@ if [ "$1" == "--from-github" ]; then
 elif [ "$1" == "--from-url" ]; then
   url="$2"
   [ -z "$url" ] && usage
-  tmp=$(mktemp -d)
   file="$tmp/package.tar.gz"
   echo "Baixando pacote..."
   curl -L -o "$file" "$url"
@@ -42,7 +43,6 @@ elif [ "$1" == "--from-url" ]; then
 elif [ "$1" == "--from-file" ]; then
   file="$2"
   [ -z "$file" ] && usage
-  tmp=$(mktemp -d)
   tar -xf "$file" -C "$tmp"
   dir=$(find "$tmp" -maxdepth 1 -mindepth 1 -type d | head -n1)
   bash "$dir/install.sh"
