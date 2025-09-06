@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import requests
-import os
-import sys
-import json
 import argparse
-import subprocess
 import getpass
+import json
+import os
+import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+import requests
+from requests import Response
 from requests.exceptions import RequestException
 
 CONFIG_PATH = Path.home() / '.config/chatgpt-cli/config'
@@ -37,14 +39,14 @@ def read_config() -> Dict[str, str]:
     return config
 
 def get_api_key() -> str:
-    api_key = os.environ.get('OPENAI_API_KEY')
+    api_key = os.environ.get("OPENAI_API_KEY")
     if api_key:
         return api_key
     if not SECRET_PATH.exists():
         sys.stderr.write("Erro: chave API não configurada. Rode gpt-secure-setup.sh\n")
         sys.exit(1)
     try:
-        password = os.environ.get('OPENAI_MASTER_PASSWORD')
+        password = os.environ.pop("OPENAI_MASTER_PASSWORD", None)
         if not password:
             password = getpass.getpass("Senha mestra: ")
     except Exception:
@@ -56,25 +58,128 @@ def get_api_key() -> str:
     try:
         result = subprocess.run(
             [
-                'openssl', 'enc', '-d', '-aes-256-cbc', '-pbkdf2',
-                '-iter', '200000', '-md', 'sha256', '-salt',
-                '-in', str(SECRET_PATH),
-                '-pass', 'stdin'
+                "openssl",
+                "enc",
+                "-d",
+                "-aes-256-cbc",
+                "-pbkdf2",
+                "-iter",
+                "200000",
+                "-md",
+                "sha256",
+                "-salt",
+                "-in",
+                str(SECRET_PATH),
+                "-pass",
+                "stdin",
             ],
             input=password.encode(),
             check=True,
-            capture_output=True
+            capture_output=True,
         )
     except Exception:
         del password
         sys.stderr.write("Erro: falha ao descriptografar a chave. Senha incorreta?\n")
         sys.exit(1)
     del password
-    api_key = result.stdout.decode('utf-8').strip()
+    api_key = result.stdout.decode("utf-8").strip()
     if not api_key:
-        sys.stderr.write("Erro: falha ao descriptografar a chave. Senha incorreta?\n")
+        sys.stderr.write(
+            "Erro: falha ao descriptografar a chave. Senha incorreta?\n"
+        )
         sys.exit(1)
     return api_key
+
+
+def extract_text_from_data(data: Dict[str, Any]) -> str:
+    """Extrai texto da resposta de acordo com a especificação mais recente."""
+    if "output" in data and isinstance(data["output"], list):
+        parts: List[str] = []
+        for item in data["output"]:
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content")
+            if isinstance(content, list):
+                for part in content:
+                    if isinstance(part, dict) and part.get("type") == "text":
+                        parts.append(part.get("text", ""))
+            elif isinstance(content, str):
+                parts.append(content)
+        return "".join(parts)
+    if "choices" in data and data["choices"]:
+        choice = data["choices"][0]
+        if isinstance(choice, dict):
+            return (
+                choice.get("message", {})
+                .get("content", "")
+            )
+    return data.get("output_text", "")
+
+
+def stream_chat_completion(
+    api_key: str,
+    payload: Dict[str, Any],
+    timeout: float,
+) -> str:
+    """Realiza streaming de tokens SSE para chat completions."""
+    headers = {
+        "Authorization": "Bearer " + api_key,
+        "Content-Type": "application/json",
+    }
+    response_text = ""
+    try:
+        with requests.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers=headers,
+            data=json.dumps(payload),
+            stream=True,
+            timeout=timeout,
+        ) as r:
+            if r.status_code != 200:
+                sys.stderr.write(f"Erro {r.status_code}: {r.text}\n")
+                sys.exit(1)
+            for line in r.iter_lines():
+                if not line:
+                    continue
+                decoded = line.decode("utf-8")
+                if decoded.startswith("data:"):
+                    content = decoded[len("data:") :].strip()
+                    if content == "[DONE]":
+                        break
+                    try:
+                        event = json.loads(content)
+                    except Exception:
+                        continue
+                    delta = event.get("choices", [{}])[0].get("delta", {})
+                    c = delta.get("content")
+                    if c:
+                        print(c, end="", flush=True)
+                        response_text += c
+            print()
+    except RequestException as e:
+        sys.stderr.write(f"Erro de conexão: {e}\n")
+        sys.exit(1)
+    return response_text
+
+
+def delete_uploaded_files(
+    file_ids: List[str], api_key: str, timeout: float
+) -> None:
+    """Remove arquivos enviados aguardando resposta do servidor."""
+    for fid in file_ids:
+        try:
+            resp: Response = requests.delete(
+                f"https://api.openai.com/v1/files/{fid}",
+                headers={"Authorization": "Bearer " + api_key},
+                timeout=timeout,
+            )
+            if resp.status_code not in (200, 202, 204):
+                sys.stderr.write(
+                    f"Erro ao remover arquivo {fid}: {resp.status_code} {resp.text}\n"
+                )
+        except RequestException as e:
+            sys.stderr.write(f"Erro ao remover arquivo {fid}: {e}\n")
+        time.sleep(0.5)
 
 def load_session(name: str) -> List[Dict[str, Any]]:
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
@@ -212,42 +317,7 @@ def main() -> None:
                 "temperature": temperature,
                 "stream": True,
             }
-            headers = {
-                'Authorization': 'Bearer ' + api_key,
-                'Content-Type': 'application/json',
-            }
-            try:
-                with requests.post(
-                    'https://api.openai.com/v1/chat/completions',
-                    headers=headers,
-                    data=json.dumps(payload),
-                    stream=True,
-                    timeout=request_timeout,
-                ) as r:
-                    if r.status_code != 200:
-                        print(f"Erro {r.status_code}: {r.text}", file=sys.stderr)
-                        sys.exit(1)
-                    for line in r.iter_lines():
-                        if not line:
-                            continue
-                        decoded = line.decode('utf-8')
-                        if decoded.startswith('data:'):
-                            content = decoded[len('data:'):].strip()
-                            if content == '[DONE]':
-                                break
-                            try:
-                                event = json.loads(content)
-                                delta = event['choices'][0].get('delta', {})
-                                c = delta.get('content')
-                                if c:
-                                    print(c, end='', flush=True)
-                                    response_text += c
-                            except Exception:
-                                pass
-                print()
-            except RequestException as e:
-                print(f"Erro de conexão: {e}", file=sys.stderr)
-                sys.exit(1)
+            response_text = stream_chat_completion(api_key, payload, request_timeout)
         else:
             input_obj = {"input_text": prompt}
             input_obj.update(uploaded_ids)
@@ -257,12 +327,12 @@ def main() -> None:
                 "temperature": temperature,
             }
             headers = {
-                'Authorization': 'Bearer ' + api_key,
-                'Content-Type': 'application/json',
+                "Authorization": "Bearer " + api_key,
+                "Content-Type": "application/json",
             }
             try:
                 resp = requests.post(
-                    'https://api.openai.com/v1/responses',
+                    "https://api.openai.com/v1/responses",
                     headers=headers,
                     data=json.dumps(payload),
                     timeout=request_timeout,
@@ -275,12 +345,7 @@ def main() -> None:
                 sys.exit(1)
             data = resp.json()
             if isinstance(data, dict):
-                if 'output' in data:
-                    response_text = data['output']
-                elif 'choices' in data and len(data['choices']) > 0:
-                    response_text = data['choices'][0].get('message', '').get('content', '')
-                else:
-                    response_text = str(data)
+                response_text = extract_text_from_data(data)
             print(response_text)
     except KeyboardInterrupt:
         print("\nInterrompido.")
@@ -293,16 +358,7 @@ def main() -> None:
     append_history(args.session, prompt, response_text)
 
     if attachments and args.delete_files:
-        for fid in uploaded_file_ids_list:
-            try:
-                requests.delete(
-                    f'https://api.openai.com/v1/files/{fid}',
-                    headers={'Authorization': 'Bearer ' + api_key},
-                    timeout=request_timeout,
-                )
-            except RequestException as e:
-                print(f"Erro ao remover arquivo {fid}: {e}", file=sys.stderr)
-                sys.exit(1)
+        delete_uploaded_files(uploaded_file_ids_list, api_key, request_timeout)
 
 if __name__ == '__main__':
     main()
