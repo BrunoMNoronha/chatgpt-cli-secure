@@ -1,4 +1,4 @@
 #!/bin/sh
 # Wrapper para gpt-gui.sh
-SCRIPT_DIR="$HOME/Documentos/chatgpt-cli"
-exec "$SCRIPT_DIR/gpt-gui.sh" "$@"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+exec "$SCRIPT_DIR/../gpt-gui.sh" "$@"
