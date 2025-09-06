@@ -3,7 +3,26 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOCAL_VERSION=$(cat "$SCRIPT_DIR/version.txt")
 CONFIG="$HOME/.config/chatgpt-cli/config"
-[ -f "$CONFIG" ] && source "$CONFIG"
+ALLOWED_VARS="GH_REPO UPDATE_URL"
+if [ -f "$CONFIG" ]; then
+  # Loop simples; usar `grep` ou `awk` seria mais performático, mas a leitura linha a linha
+  # facilita a validação e manutenção.
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      ''|\#*) continue ;;
+    esac
+    if [[ $line =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      key="${BASH_REMATCH[1]}"
+      value="${BASH_REMATCH[2]}"
+      if [[ " $ALLOWED_VARS " == *" $key "* ]]; then
+        export "$key=$value"
+      fi
+    else
+      echo "Linha malformada em $CONFIG: $line" >&2
+      exit 1
+    fi
+  done < "$CONFIG"
+fi
 
 HAS_UPDATE=0
 NEW_VERSION=""

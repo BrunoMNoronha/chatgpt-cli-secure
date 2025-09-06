@@ -114,6 +114,10 @@ UPDATE_URL=""   # Ex.: "https://meuservidor.com/updates"
 GH_REPO=""      # Ex.: "usuario/repositorio" para releases do GitHub
 ```
 
+- Cada linha deve seguir o formato `CHAVE=valor` e linhas iniciadas por `#` são ignoradas.
+- Para o script `check-update.sh`, somente `UPDATE_URL` e `GH_REPO` são interpretadas; variáveis não reconhecidas são ignoradas.
+- Entradas malformadas fazem o script abortar, evitando execução acidental de comandos.
+
 - **MODEL**: modelo padrão usado pela CLI/GUI (pode ser alterado no menu da GUI ou manualmente).
 - **TEMP**: temperatura padrão (0 a 1).
 - **UPDATE_URL**: URL onde deve existir um `version.txt` e um pacote `chatgpt-cli-secure.tar.gz`.
