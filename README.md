@@ -36,6 +36,23 @@
 - **Opcionais** (para copiar texto no clipboard): `xclip` (Xorg) ou `wl-clipboard` (Wayland).
 - Testado em sistemas Linux (Arch e derivados, mas compatível com qualquer distribuição que possua os utilitários acima).
 
+```bash
+for cmd in bash python3 openssl curl zenity; do
+  command -v "$cmd" >/dev/null || echo "$cmd ausente"
+done
+```
+
+Se qualquer comando estiver ausente, instale-o via gerenciador de pacotes antes de continuar.
+
+**Alternativa mais performática** (verificações paralelas com `xargs`):
+
+```bash
+printf '%s\n' bash python3 openssl curl zenity \
+  | xargs -r -P4 -I{} sh -c 'command -v "$1" >/dev/null || echo "$1 ausente"' _ {}
+```
+
+Essa abordagem executa as checagens simultaneamente, acelerando a validação em listas maiores.
+
 ## Instalação rápida
 
 ```bash
