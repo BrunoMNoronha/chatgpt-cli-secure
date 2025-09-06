@@ -1,4 +1,25 @@
-#!/bin/sh
-# Wrapper para gpt_cli.py
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-exec python3 "$SCRIPT_DIR/../gpt_cli.py" "$@"
+#!/usr/bin/env python3
+"""Wrapper to execute gpt_cli.py using the current Python interpreter."""
+
+from __future__ import annotations
+
+import os
+import sys
+from pathlib import Path
+from typing import NoReturn
+
+def main() -> NoReturn:
+    """Run the CLI script relative to this wrapper.
+
+    Uses ``os.execv`` to replace the current process with ``gpt_cli.py``,
+    avoiding the overhead of spawning a child process. An alternative is
+    ``subprocess.run`` which offers more control but is slightly slower due
+    to process creation.
+    """
+    script_dir: Path = Path(__file__).resolve().parent
+    gpt_cli: Path = script_dir.parent / "gpt_cli.py"
+    os.execv(sys.executable, [sys.executable, str(gpt_cli), *sys.argv[1:]])
+
+
+if __name__ == "__main__":
+    main()
