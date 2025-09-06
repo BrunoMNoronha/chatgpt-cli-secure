@@ -228,7 +228,7 @@ def main():
                 if 'output' in data:
                     response_text = data['output']
                 elif 'choices' in data and len(data['choices']) > 0:
-                    response_text = data['choices'][0].get('message','').get('content','')
+                    response_text = data['choices'][0].get('message', {}).get('content', '')
                 else:
                     response_text = str(data)
             print(response_text)
