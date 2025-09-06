@@ -216,7 +216,7 @@ Para remover os wrappers e o atalho de desktop:
 bash uninstall.sh
 ```
 
-Para remover completamente também os arquivos em `$PREFIX_DIR`, histórico, configuração e a chave, use a opção `--purge`:
+Para remover completamente os diretórios de dados (`$PREFIX_DIR`, `$STATE_DIR`, `$SHARE_DIR` e `$CONFIG_DIR`), histórico, configuração e a chave, use a opção `--purge`:
 ```bash
 bash uninstall.sh --purge
 ```

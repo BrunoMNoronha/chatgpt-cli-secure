@@ -15,6 +15,7 @@ rm -f "$APP_DIR/chatgpt-gui.desktop"
 if [ "$1" == "--purge" ]; then
   rm -rf "$PREFIX_DIR"
   rm -rf "$STATE_DIR"
+  rm -rf "$SHARE_DIR" "$CONFIG_DIR"
   rm -f "$SHARE_DIR/secret.enc"
   rm -f "$CONFIG_DIR/config"
   echo "Todos os dados e scripts foram removidos."
