@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=ChatGPT CLI Secure
+Comment=Interface gráfica leve para ChatGPT
+Exec=gpt-gui
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Utility;
