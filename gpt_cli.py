@@ -9,6 +9,7 @@ import subprocess
 import sys
 import time
 from configparser import ConfigParser, MissingSectionHeaderError, ParsingError
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -24,6 +25,19 @@ STATE_DIR = Path.home() / '.local/state/chatgpt-cli'
 HISTORY_FILE = STATE_DIR / 'history.jsonl'
 SESSIONS_DIR = STATE_DIR / 'sessions'
 DEFAULT_REQUEST_TIMEOUT: float = 30.0
+
+
+@dataclass
+class Config:
+    """Configuração tipada para o cliente.
+
+    Utiliza *dataclass* para reduzir boilerplate e tornar os campos explícitos.
+    Uma alternativa ainda mais performática seria empregar ``__slots__`` no
+    dataclass, porém à custa de menor flexibilidade.
+    """
+
+    model: str
+    temperature: float
 
 
 def read_config() -> Dict[str, str]:
@@ -44,6 +58,25 @@ def read_config() -> Dict[str, str]:
     except (OSError, MissingSectionHeaderError, ParsingError):
         return {}
     return {k: v.strip().strip('"') for k, v in parser["DEFAULT"].items()}
+
+
+def load_env_config(config_dict: Optional[Dict[str, str]] = None) -> Config:
+    """Constrói ``Config`` a partir de variáveis de ambiente.
+
+    Aplica o padrão *Factory Method* para isolar a lógica de conversão e
+    validação. Uma alternativa mais performática seria acessar ``os.environ``
+    diretamente com chaves obrigatórias, evitando lookups repetidos.
+    """
+    cfg = config_dict or read_config()
+    model: str = os.environ.get("OPENAI_MODEL") or cfg.get("MODEL", "gpt-4o-mini")
+    temp_raw = os.environ.get("OPENAI_TEMP") or cfg.get("TEMP", "0.7")
+    try:
+        temperature = float(temp_raw)
+    except ValueError as exc:
+        raise ValueError("Temperatura inválida") from exc
+    if not 0.0 <= temperature <= 2.0:
+        raise ValueError("Temperatura deve estar entre 0 e 2")
+    return Config(model=model, temperature=temperature)
 
 def get_api_key() -> str:
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -125,7 +158,8 @@ def extract_text_from_data(data: Dict[str, Any]) -> str:
 
 def stream_chat_completion(
     api_key: str,
-    payload: Dict[str, Any],
+    messages: List[Dict[str, Any]],
+    config: Config,
     timeout: float,
 ) -> str:
     """Realiza streaming de tokens SSE para chat completions.
@@ -135,6 +169,12 @@ def stream_chat_completion(
     strings. Uma alternativa igualmente performática seria acumular tokens em
     uma lista e aplicar ``"".join`` ao final.
     """
+    payload: Dict[str, Any] = {
+        "model": config.model,
+        "messages": messages,
+        "temperature": config.temperature,
+        "stream": True,
+    }
     headers = {
         "Authorization": "Bearer " + api_key,
         "Content-Type": "application/json",
@@ -241,11 +281,17 @@ def main() -> None:
     parser.add_argument('--temp', type=float, help="Temperatura (sobrescreve config).")
     args = parser.parse_args()
 
-    config = read_config()
-    model = args.model or os.environ.get('OPENAI_MODEL') or config.get('MODEL', 'gpt-4o-mini')
-    temperature = args.temp or float(os.environ.get('OPENAI_TEMP') or config.get('TEMP', '0.7'))
+    config_raw = read_config()
+    config = load_env_config(config_raw)
+    if args.model or args.temp is not None:
+        config = Config(
+            model=args.model or config.model,
+            temperature=args.temp if args.temp is not None else config.temperature,
+        )
     try:
-        request_timeout: float = float(config.get('REQUEST_TIMEOUT', DEFAULT_REQUEST_TIMEOUT))
+        request_timeout: float = float(
+            config_raw.get('REQUEST_TIMEOUT', DEFAULT_REQUEST_TIMEOUT)
+        )
     except ValueError:
         request_timeout = DEFAULT_REQUEST_TIMEOUT
     prompt = args.prompt
@@ -324,20 +370,16 @@ def main() -> None:
         if not attachments:
             messages = list(session_messages) if session_messages else []
             messages.append({"role": "user", "content": prompt})
-            payload = {
-                "model": model,
-                "messages": messages,
-                "temperature": temperature,
-                "stream": True,
-            }
-            response_text = stream_chat_completion(api_key, payload, request_timeout)
+            response_text = stream_chat_completion(
+                api_key, messages, config, request_timeout
+            )
         else:
             input_obj = {"input_text": prompt}
             input_obj.update(uploaded_ids)
             payload = {
-                "model": model,
+                "model": config.model,
                 "input": input_obj,
-                "temperature": temperature,
+                "temperature": config.temperature,
             }
             headers = {
                 "Authorization": "Bearer " + api_key,

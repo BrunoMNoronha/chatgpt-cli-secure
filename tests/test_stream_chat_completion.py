@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from gpt_cli import stream_chat_completion
+from gpt_cli import Config, stream_chat_completion
 
 
 class FakeResponse:
@@ -83,7 +83,9 @@ def test_stream_chat_completion_equivalence(monkeypatch) -> None:
 
     monkeypatch.setattr(requests, "post", fake_post_new)
     with redirect_stdout(StringIO()) as new_out:
-        new_result: str = stream_chat_completion("key", {}, 0.0)
+        new_result: str = stream_chat_completion(
+            "key", [], Config(model="m", temperature=0.0), 0.0
+        )
     new_print: str = new_out.getvalue()
 
     assert old_result == new_result
