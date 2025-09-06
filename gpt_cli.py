@@ -10,6 +10,7 @@ import subprocess
 import getpass
 import time
 from pathlib import Path
+from typing import Any, Dict, List
 
 CONFIG_PATH = Path.home() / '.config/chatgpt-cli/config'
 SECRET_PATH = Path.home() / '.local/share/chatgpt-cli/secret.enc'
@@ -17,8 +18,8 @@ STATE_DIR = Path.home() / '.local/state/chatgpt-cli'
 HISTORY_FILE = STATE_DIR / 'history.jsonl'
 SESSIONS_DIR = STATE_DIR / 'sessions'
 
-def read_config():
-    config = {}
+def read_config() -> Dict[str, str]:
+    config: Dict[str, str] = {}
     if CONFIG_PATH.exists():
         try:
             with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
@@ -26,14 +27,14 @@ def read_config():
                     line = line.strip()
                     if not line or line.startswith('#') or '=' not in line:
                         continue
-                    key, val = line.split('=',1)
+                    key, val = line.split('=', 1)
                     val = val.strip().strip('"')
                     config[key] = val
         except Exception:
             pass
     return config
 
-def get_api_key():
+def get_api_key() -> str:
     api_key = os.environ.get('OPENAI_API_KEY')
     if api_key:
         return api_key
@@ -51,20 +52,29 @@ def get_api_key():
         sys.stderr.write("Senha vazia.\n")
         sys.exit(1)
     try:
-        result = subprocess.run(['openssl','enc','-d','-aes-256-cbc','-pbkdf2',
-                                 '-iter','200000','-md','sha256','-salt',
-                                 '-in', str(SECRET_PATH),
-                                 '-pass', f'pass:{password}'],
-                                check=True, capture_output=True)
-        api_key = result.stdout.decode('utf-8').strip()
-        if not api_key:
-            raise RuntimeError
-        return api_key
+        result = subprocess.run(
+            [
+                'openssl', 'enc', '-d', '-aes-256-cbc', '-pbkdf2',
+                '-iter', '200000', '-md', 'sha256', '-salt',
+                '-in', str(SECRET_PATH),
+                '-pass', 'stdin'
+            ],
+            input=password.encode(),
+            check=True,
+            capture_output=True
+        )
     except Exception:
+        del password
         sys.stderr.write("Erro: falha ao descriptografar a chave. Senha incorreta?\n")
         sys.exit(1)
+    del password
+    api_key = result.stdout.decode('utf-8').strip()
+    if not api_key:
+        sys.stderr.write("Erro: falha ao descriptografar a chave. Senha incorreta?\n")
+        sys.exit(1)
+    return api_key
 
-def load_session(name):
+def load_session(name: str) -> List[Dict[str, Any]]:
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
     session_file = SESSIONS_DIR / f'{name}.json'
     if session_file.exists():
@@ -77,7 +87,7 @@ def load_session(name):
             pass
     return []
 
-def save_session(name, messages):
+def save_session(name: str, messages: List[Dict[str, Any]]) -> None:
     SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
     session_file = SESSIONS_DIR / f'{name}.json'
     try:
@@ -86,7 +96,7 @@ def save_session(name, messages):
     except Exception as e:
         sys.stderr.write(f"Não foi possível salvar a sessão: {e}\n")
 
-def append_history(session, prompt, response):
+def append_history(session: str, prompt: str, response: str) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     try:
         with open(HISTORY_FILE, 'a', encoding='utf-8') as f:
@@ -100,7 +110,7 @@ def append_history(session, prompt, response):
     except Exception as e:
         sys.stderr.write(f"Não foi possível gravar histórico: {e}\n")
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="CLI para ChatGPT com suporte a anexos e sessões.")
     parser.add_argument('prompt', nargs='?', help="Pergunta para o ChatGPT.")
     parser.add_argument('-f','--file', action='append', help="Adicionar anexo (PDF/TXT/IMG/Áudio).", default=[])
