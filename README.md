@@ -171,6 +171,24 @@ GH_REPO=""      # Ex.: "usuario/repositorio" para releases do GitHub
 
 Edite esse arquivo para apontar para sua fonte de atualização preferida.
 
+## Atualizações
+
+1. Crie o diretório de configuração:
+   ```bash
+   mkdir -p ~/.config/chatgpt-cli
+   ```
+2. Copie o modelo de configuração instalado (padrão em `$PREFIX_DIR`):
+   ```bash
+   cp "$PREFIX_DIR/chatgpt_cli/config.example" ~/.config/chatgpt-cli/config
+   ```
+   - Alternativa mais performática: `install -Dm 644` copia e ajusta permissões em um único passo.
+3. Edite `~/.config/chatgpt-cli/config` definindo as origens de atualização:
+   ```bash
+   GH_REPO="usuario/repositorio"   # ex.: "BrunoMNoronha/chatgpt-cli-secure"
+   UPDATE_URL="https://meuservidor.com/updates"
+   ```
+   Se ambos forem configurados, `GH_REPO` tem prioridade.
+
 ## Atualização
 
 - Verifique manualmente com:

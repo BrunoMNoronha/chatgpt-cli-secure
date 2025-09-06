@@ -31,12 +31,10 @@ sed "s|Exec=.*|Exec=$BIN_DIR/gpt-gui|g" "$PREFIX_DIR/desktop/chatgpt-gui.desktop
 # Criar config padrão se não existir
 CONFIG="$HOME/.config/chatgpt-cli/config"
 if [ ! -f "$CONFIG" ]; then
-cat > "$CONFIG" <<'EOF2'
-MODEL="gpt-4o-mini"
-TEMP="0.7"
-UPDATE_URL=""
-GH_REPO=""
-EOF2
+  cp "$PREFIX_DIR/chatgpt_cli/config.example" "$CONFIG"
+  # Alternativa mais performática: ``install -Dm 644`` define permissões em
+  # um único passo, mas ``cp`` mantém a simplicidade e segue o padrão
+  # *Guard Clause* para idempotência.
 fi
 
 echo "Instalação concluída. Use 'gpt' para a CLI e 'gpt-gui' para a GUI."
