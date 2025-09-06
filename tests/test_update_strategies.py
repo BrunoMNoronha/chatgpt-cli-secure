@@ -1,6 +1,7 @@
 import os
 import tarfile
 import shutil
+import io
 from pathlib import Path
 from typing import Dict
 import subprocess
@@ -10,7 +11,7 @@ import sys
 import pytest
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from update_strategies import FileStrategy, UrlStrategy, GitHubStrategy
+from update_strategies import FileStrategy, UrlStrategy, GitHubStrategy, _safe_extract
 
 
 def _create_package(tmp_dir: Path, script: str) -> Path:
@@ -94,3 +95,15 @@ def test_github_strategy_uses_check_script(tmp_path: Path, monkeypatch: pytest.M
     finally:
         os.environ.pop("OUTPUT")
     assert out.read_text().strip() == "ok"
+
+
+def test_safe_extract_detects_path_traversal(tmp_path: Path) -> None:
+    tar_path = tmp_path / "malicious.tar"
+    with tarfile.open(tar_path, "w") as tar:
+        info = tarfile.TarInfo(name="../evil.txt")
+        data = b"malicious"
+        info.size = len(data)
+        tar.addfile(info, io.BytesIO(data))
+    with tarfile.open(tar_path) as tar:
+        with pytest.raises(ValueError):
+            _safe_extract(tar, tmp_path)

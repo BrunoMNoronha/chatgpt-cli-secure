@@ -11,6 +11,23 @@ from pathlib import Path
 from typing import Optional
 
 
+def _safe_extract(tar: tarfile.TarFile, path: Path) -> None:
+    """Safely extract ``tar`` into ``path`` preventing path traversal.
+
+    This routine ensures that every member in the archive, once resolved,
+    remains within the destination directory.  If a member attempts to escape
+    (e.g. using ``..`` components), a ``ValueError`` is raised and nothing is
+    extracted.
+    """
+
+    dest_path = Path(path).resolve()
+    for member in tar.getmembers():
+        member_path = (dest_path / member.name).resolve()
+        if not str(member_path).startswith(str(dest_path)):
+            raise ValueError(f"Path traversal detected: {member.name}")
+    tar.extractall(dest_path, filter="data")
+
+
 class UpdateStrategy(ABC):
     """Interface for update strategies."""
 
@@ -42,7 +59,7 @@ class FileStrategy(UpdateStrategy):
         self._verify_hash()
         with tempfile.TemporaryDirectory() as tmp:
             with tarfile.open(self.path) as tar:
-                tar.extractall(tmp)
+                _safe_extract(tar, Path(tmp))
             dir_path = next(p for p in Path(tmp).iterdir() if p.is_dir())
             install_script = dir_path / "install.sh"
             subprocess.run(["bash", str(install_script)], check=True)
