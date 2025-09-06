@@ -2,7 +2,7 @@
 # Instala o chatgpt-cli-secure na pasta do usuário.
 set -e
 
-PREFIX_DIR="$HOME/Documentos/chatgpt-cli"
+PREFIX_DIR="${PREFIX_DIR:-$HOME/.local/share/chatgpt-cli}"
 BIN_DIR="$HOME/.local/bin"
 APP_DIR="$HOME/.local/share/applications"
 

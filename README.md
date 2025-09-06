@@ -39,16 +39,20 @@
 ## Instalação
 
 1. Clone ou extraia este repositório e entre na pasta `chatgpt-cli-secure`.
-2. Execute o script de instalação:
-   ```bash
-   bash install.sh
-   ```
-   O instalador copia os arquivos para `~/Documentos/chatgpt-cli/`, instala wrappers (`gpt` e `gpt-gui`) em `~/.local/bin/` e cria um atalho de desktop em `~/.local/share/applications/`. Também cria, caso não exista, o arquivo de configuração em `~/.config/chatgpt-cli/config`.
+2. (Opcional) exporte `PREFIX_DIR` para escolher outro destino de instalação. O padrão é `~/.local/share/chatgpt-cli`:
+    ```bash
+    export PREFIX_DIR=/caminho/desejado
+    ```
+3. Execute o script de instalação:
+    ```bash
+    bash install.sh
+    ```
+    O instalador copia os arquivos para `$PREFIX_DIR` (padrão `~/.local/share/chatgpt-cli/`), instala wrappers (`gpt` e `gpt-gui`) em `~/.local/bin/` e cria um atalho de desktop em `~/.local/share/applications/`. Também cria, caso não exista, o arquivo de configuração em `~/.config/chatgpt-cli/config`.
 
-3. Configure a chave da OpenAI de forma segura executando:
-   ```bash
-   bash ~/Documentos/chatgpt-cli/gpt-secure-setup.sh
-   ```
+4. Configure a chave da OpenAI de forma segura executando:
+    ```bash
+    bash "$PREFIX_DIR/gpt-secure-setup.sh"
+    ```
    Você informará sua API key e uma senha mestra. A chave ficará criptografada em `~/.local/share/chatgpt-cli/secret.enc`.
 
 > **Nota:** Após a instalação, talvez seja necessário reindexar o menu de aplicativos (ou reiniciar o ambiente gráfico) para que o atalho apareça.
@@ -129,18 +133,18 @@ Edite esse arquivo para apontar para sua fonte de atualização preferida.
 
 - Verifique manualmente com:
   ```bash
-  bash ~/Documentos/chatgpt-cli/check-update.sh
+  bash "$PREFIX_DIR/check-update.sh"
   ```
 - Atualize via linha de comando:
   ```bash
   # A partir do GitHub
-  bash ~/Documentos/chatgpt-cli/update.sh --from-github
+  bash "$PREFIX_DIR/update.sh" --from-github
 
   # A partir de uma URL
-  bash ~/Documentos/chatgpt-cli/update.sh --from-url https://meuservidor.com/chatgpt-cli-secure.tar.gz
+  bash "$PREFIX_DIR/update.sh" --from-url https://meuservidor.com/chatgpt-cli-secure.tar.gz
 
   # Usando um arquivo local
-  bash ~/Documentos/chatgpt-cli/update.sh --from-file /caminho/para/pacote.tar.gz
+  bash "$PREFIX_DIR/update.sh" --from-file /caminho/para/pacote.tar.gz
   ```
 
 A GUI automatiza esse processo quando seleciona **Checar atualização**.
@@ -152,7 +156,7 @@ Para remover os wrappers e o atalho de desktop:
 bash uninstall.sh
 ```
 
-Para remover completamente também os arquivos em `~/Documentos/chatgpt-cli`, histórico, configuração e a chave, use a opção `--purge`:
+Para remover completamente também os arquivos em `$PREFIX_DIR`, histórico, configuração e a chave, use a opção `--purge`:
 ```bash
 bash uninstall.sh --purge
 ```
@@ -175,7 +179,7 @@ bash uninstall.sh --purge
    ```
 2. **Configurar chave**:
    ```bash
-   bash ~/Documentos/chatgpt-cli/gpt-secure-setup.sh
+   bash "$PREFIX_DIR/gpt-secure-setup.sh"
    ```
    Siga as instruções para inserir a API key e a senha mestra.
 
@@ -209,11 +213,11 @@ bash uninstall.sh --purge
 7. **Teste de atualização via terminal**:
    - Edite `~/.config/chatgpt-cli/config` definindo `GH_REPO="usuario/repositorio-falso"` ou `UPDATE_URL="https://exemplo.com/update"` e execute:
      ```bash
-     bash ~/Documentos/chatgpt-cli/check-update.sh
+     bash "$PREFIX_DIR/check-update.sh"
      ```
      Observe a saída. Para testar o fluxo de instalação sem internet, baixe ou crie um tarball falso contendo este projeto, depois use:
      ```bash
-     bash ~/Documentos/chatgpt-cli/update.sh --from-file chatgpt-cli-secure.tar.gz
+     bash "$PREFIX_DIR/update.sh" --from-file chatgpt-cli-secure.tar.gz
      ```
 
 Siga estes passos para validar todas as funcionalidades.
