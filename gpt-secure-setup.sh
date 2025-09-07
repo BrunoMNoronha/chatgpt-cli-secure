@@ -1,8 +1,13 @@
 #!/bin/bash
 # Script para configurar chave da API OpenAI de forma segura.
 set -e
-SECRET_DIR="$HOME/.local/share/chatgpt-cli"
-CONFIG_DIR="$HOME/.config/chatgpt-cli"
+
+# Resolve HOME para o usuário correto (suporta sudo)
+REAL_USER="${SUDO_USER:-$(id -un)}"
+USER_HOME="$(getent passwd "$REAL_USER" | cut -d: -f6)"
+
+SECRET_DIR="$USER_HOME/.local/share/chatgpt-cli"
+CONFIG_DIR="$USER_HOME/.config/chatgpt-cli"
 mkdir -p "$SECRET_DIR"
 mkdir -p "$CONFIG_DIR"
 
