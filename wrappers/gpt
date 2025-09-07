@@ -25,7 +25,7 @@ def main() -> NoReturn:
     # Falha rápida se a chave não estiver configurada, orientando o usuário.
     if "OPENAI_API_KEY" not in env:
         msg: str = (
-            "Chave OpenAI ausente. Execute 'gpt-secure-setup.sh' para configurá-la."
+            "Chave OpenAI ausente. Execute 'gpt_secure_setup.py' para configurá-la."
         )
         print(msg, file=sys.stderr)
         raise SystemExit(1)

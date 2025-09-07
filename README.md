@@ -70,7 +70,7 @@ sudo pacman -S --needed git curl openssl zenity python-requests
 git clone https://github.com/BrunoMNoronha/chatgpt-cli-secure.git
 cd chatgpt-cli-secure
 PREFIX_DIR=~/.local/share/chatgpt-cli bash install.sh
-bash $PREFIX_DIR/gpt-secure-setup.sh
+python $PREFIX_DIR/gpt_secure_setup.py
 export PATH="$HOME/.local/bin:$PATH"
 gpt "Olá"
 gpt-gui
@@ -102,13 +102,13 @@ O diretório `~/.local/bin` precisa estar no `PATH` para que `gpt` e `gpt-gui` f
 
 5. Configure a chave da OpenAI de forma segura executando:
     ```bash
-    bash "$PREFIX_DIR/gpt-secure-setup.sh"
+    python "$PREFIX_DIR/gpt_secure_setup.py"
     ```
    Você informará sua API key e uma senha mestra. A chave ficará criptografada em `~/.local/share/chatgpt-cli/secret.enc`.
 
 > **Nota:** Após a instalação, talvez seja necessário reindexar o menu de aplicativos (ou reiniciar o ambiente gráfico) para que o atalho apareça.
 
-> **Pré-requisito:** antes de usar `gpt` ou `gpt-gui`, execute `bash "$PREFIX_DIR/gpt-secure-setup.sh"` para armazenar a chave API de forma criptografada.  
+> **Pré-requisito:** antes de usar `gpt` ou `gpt-gui`, execute `python "$PREFIX_DIR/gpt_secure_setup.py"` para armazenar a chave API de forma criptografada.
 > **Alternativa menos segura:** exporte `OPENAI_API_KEY` manualmente (`export OPENAI_API_KEY="sua_chave"`); ⚠️ a chave ficará exposta em texto claro no ambiente.
 
 ## Uso da CLI
@@ -268,7 +268,7 @@ O arquivo criptografado deve ser legível e gravável apenas pelo usuário. Perm
 ```bash
 # Remove o segredo atual e executa o assistente novamente
 rm ~/.local/share/chatgpt-cli/secret.enc
-bash ~/.local/share/chatgpt-cli/gpt-secure-setup.sh
+python ~/.local/share/chatgpt-cli/gpt_secure_setup.py
 
 # Alternativa mais segura (sobrescreve antes de apagar)
 shred -u ~/.local/share/chatgpt-cli/secret.enc
@@ -285,7 +285,7 @@ Refaça o processo sempre que suspeitar de comprometimento. A opção com `shred
    ```
 2. **Configurar chave**:
    ```bash
-   bash "$PREFIX_DIR/gpt-secure-setup.sh"
+   python "$PREFIX_DIR/gpt_secure_setup.py"
    ```
    Siga as instruções para inserir a API key e a senha mestra.
 

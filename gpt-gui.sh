@@ -7,7 +7,7 @@ CONFIG_DIR="$HOME/.config/chatgpt-cli"
 SECRET_FILE="$HOME/.local/share/chatgpt-cli/secret.enc"
 
 if [ ! -f "$SECRET_FILE" ]; then
-    zenity --error --title="Erro" --text="Chave da API não encontrada. Execute gpt-secure-setup.sh primeiro."
+    zenity --error --title="Erro" --text="Chave da API não encontrada. Execute gpt_secure_setup.py primeiro."
     exit 1
 fi
 
@@ -150,7 +150,7 @@ while true; do
             fi
             ;;
         "Configurar chave")
-            "$SCRIPT_DIR/gpt-secure-setup.sh"
+            "$SCRIPT_DIR/gpt_secure_setup.py"
             MASTER_PASS=$(zenity --password --title="ChatGPT CLI Secure" --text="Digite a senha mestra para desbloquear a chave:")
             if [ $? -ne 0 ] || [ -z "$MASTER_PASS" ]; then
                 zenity --error --text="Senha vazia."

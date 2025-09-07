@@ -13,7 +13,7 @@ from .util import assert_exec
 EXECUTABLES: List[Path] = [
     Path("check-update.sh"),
     Path("gpt-gui.sh"),
-    Path("gpt-secure-setup.sh"),
+    Path("gpt_secure_setup.py"),
     Path("install.sh"),
     Path("uninstall.sh"),
     Path("update.sh"),

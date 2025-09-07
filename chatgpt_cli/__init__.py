@@ -4,7 +4,6 @@ import argparse
 import getpass
 import json
 import os
-import subprocess
 import sys
 import time
 from configparser import ConfigParser, MissingSectionHeaderError, ParsingError
@@ -17,9 +16,9 @@ from io import StringIO
 import requests
 from requests import Response
 from requests.exceptions import RequestException
+from .secure_storage import KeyLocation, load_api_key
 
 CONFIG_PATH = Path.home() / '.config/chatgpt-cli/config'
-SECRET_PATH = Path.home() / '.local/share/chatgpt-cli/secret.enc'
 STATE_DIR = Path.home() / '.local/state/chatgpt-cli'
 HISTORY_FILE = STATE_DIR / 'history.jsonl'
 SESSIONS_DIR = STATE_DIR / 'sessions'
@@ -78,16 +77,25 @@ def load_env_config(config_dict: Optional[Dict[str, str]] = None) -> Config:
     return Config(model=model, temperature=temperature)
 
 def get_api_key() -> str:
+    """Obtém a chave da API OpenAI.
+
+    Aplica o padrão *Strategy* ao delegar a descriptografia para
+    ``load_api_key``. Uma alternativa mais performática seria guardar a chave
+    em memória compartilhada, evitando I/O, porém sacrificaria a segurança.
+    """
     api_key = os.environ.get("OPENAI_API_KEY")
     if api_key:
         return api_key
-    if not SECRET_PATH.exists():
-        sys.stderr.write("Erro: chave API não configurada. Rode gpt-secure-setup.sh\n")
+    location: KeyLocation = KeyLocation()
+    if not location.path.exists():
+        sys.stderr.write(
+            "Erro: chave API não configurada. Rode gpt-secure-setup.py\n"
+        )
         sys.exit(1)
     try:
         password = os.environ.pop("OPENAI_MASTER_PASSWORD", None)
         if not password:
-            password = getpass.getpass("Senha mestra: ")
+            password = getpass.getpass("Senha mestra: " )
     except Exception:
         sys.stderr.write("Erro ao ler senha.\n")
         sys.exit(1)
@@ -95,40 +103,12 @@ def get_api_key() -> str:
         sys.stderr.write("Senha vazia.\n")
         sys.exit(1)
     try:
-        result = subprocess.run(
-            [
-                "openssl",
-                "enc",
-                "-d",
-                "-aes-256-cbc",
-                "-pbkdf2",
-                "-iter",
-                "200000",
-                "-md",
-                "sha256",
-                "-salt",
-                "-in",
-                str(SECRET_PATH),
-                "-pass",
-                "stdin",
-            ],
-            input=password.encode(),
-            check=True,
-            capture_output=True,
-        )
+        return load_api_key(password, loc=location)
     except Exception:
-        del password
-        sys.stderr.write("Erro: falha ao descriptografar a chave. Senha incorreta?\n")
-        sys.exit(1)
-    del password
-    api_key = result.stdout.decode("utf-8").strip()
-    if not api_key:
         sys.stderr.write(
             "Erro: falha ao descriptografar a chave. Senha incorreta?\n"
         )
         sys.exit(1)
-    return api_key
-
 
 def extract_text_from_data(data: Dict[str, Any]) -> str:
     """Extrai texto da resposta de acordo com a especificação mais recente."""
