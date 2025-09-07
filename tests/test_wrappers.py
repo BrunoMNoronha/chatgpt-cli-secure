@@ -25,6 +25,7 @@ def test_gpt_wrapper_resolves_moved_package(tmp_path: Path) -> None:
 
     env: dict[str, str] = os.environ.copy()
     env["OPENAI_API_KEY"] = "test"
+    env["PREFIX_DIR"] = str(tmp_path)
     result: subprocess.CompletedProcess[str] = subprocess.run(
         [str(wrapper_dest)], capture_output=True, text=True, check=True, env=env
     )
