@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import stat
 import subprocess
@@ -22,8 +23,10 @@ def test_gpt_wrapper_resolves_moved_package(tmp_path: Path) -> None:
 
     wrapper_dest.chmod(wrapper_dest.stat().st_mode | stat.S_IEXEC)
 
+    env: dict[str, str] = os.environ.copy()
+    env["OPENAI_API_KEY"] = "test"
     result: subprocess.CompletedProcess[str] = subprocess.run(
-        [str(wrapper_dest)], capture_output=True, text=True, check=True
+        [str(wrapper_dest)], capture_output=True, text=True, check=True, env=env
     )
     assert result.stdout.strip() == "gpt_cli_ok"
 
