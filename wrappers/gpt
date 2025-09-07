@@ -21,14 +21,20 @@ def main() -> NoReturn:
     script_dir: Path = Path(__file__).resolve().parent
     repo_root: Path = script_dir.parent
     os.chdir(repo_root)
+    sys.path.insert(0, str(repo_root))
     env: Dict[str, str] = os.environ.copy()
     # Falha rápida se a chave não estiver configurada, orientando o usuário.
     if "OPENAI_API_KEY" not in env:
-        msg: str = (
-            "Chave OpenAI ausente. Execute 'gpt_secure_setup.py' para configurá-la."
-        )
-        print(msg, file=sys.stderr)
-        raise SystemExit(1)
+        try:
+            from chatgpt_cli.secure_storage import KeyLocation, load_api_key
+
+            env["OPENAI_API_KEY"] = load_api_key(loc=KeyLocation())
+        except Exception:
+            msg: str = (
+                "Chave OpenAI ausente. Execute 'gpt_secure_setup.py' para configurá-la."
+            )
+            print(msg, file=sys.stderr)
+            raise SystemExit(1)
     pythonpath: str = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = (
         f"{repo_root}{os.pathsep}{pythonpath}" if pythonpath else str(repo_root)
