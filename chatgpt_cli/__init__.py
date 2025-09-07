@@ -6,6 +6,7 @@ import json
 import os
 import sys
 import time
+from functools import lru_cache
 from configparser import ConfigParser, MissingSectionHeaderError, ParsingError
 from dataclasses import dataclass
 from pathlib import Path
@@ -76,12 +77,18 @@ def load_env_config(config_dict: Optional[Dict[str, str]] = None) -> Config:
         raise ValueError("Temperatura deve estar entre 0 e 2")
     return Config(model=model, temperature=temperature)
 
+@lru_cache(maxsize=1)
 def get_api_key() -> str:
     """Obtém a chave da API OpenAI.
 
-    Aplica o padrão *Strategy* ao delegar a descriptografia para
-    ``load_api_key``. Uma alternativa mais performática seria guardar a chave
-    em memória compartilhada, evitando I/O, porém sacrificaria a segurança.
+    Emprega o padrão *Singleton* via ``lru_cache`` para armazenar a chave
+    após a primeira descriptografia, evitando invocações repetidas da rotina
+    de segurança. Uma alternativa ainda mais performática seria utilizar uma
+    variável global para cache manual, eliminando a sobrecarga do decorator,
+    porém dificultaria a limpeza em testes.
+
+    Aplica também o padrão *Strategy* ao delegar a descriptografia para
+    ``load_api_key``.
     """
     api_key = os.environ.get("OPENAI_API_KEY")
     if api_key:
