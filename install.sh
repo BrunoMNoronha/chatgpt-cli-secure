@@ -48,7 +48,14 @@ from pathlib import Path
 from typing import List
 
 
-def verify(commands: List[str], bin_dir: Path) -> None:
+def finalize(commands: List[str], bin_dir: Path, secret: Path) -> None:
+    """
+    Verifica comandos e orienta conforme a presença do segredo.
+
+    Possíveis melhorias de desempenho: usar ``next`` com geradores para
+    encerrar a busca ao encontrar a primeira ausência ou cachear resultados de
+    ``shutil.which`` para listas extensas.
+    """
     missing: List[str] = [cmd for cmd in commands if shutil.which(cmd) is None]
     if missing:
         print(
@@ -56,8 +63,18 @@ def verify(commands: List[str], bin_dir: Path) -> None:
         )
         print(f"Adicione {bin_dir} ao PATH para usá-los.")
         return
-    print("Instalação concluída. Use 'gpt' para a CLI e 'gpt-gui' para a GUI.")
+    if secret.exists():  # Guard Clause
+        print("Instalação concluída. Use 'gpt' para a CLI e 'gpt-gui' para a GUI.")
+        return
+    print(
+        "Instalação concluída. Execute 'gpt-secure-setup.sh' para configurar a API key."
+    )
 
 
-verify(['gpt', 'gpt-gui'], Path(os.environ.get('BIN_DIR', str(Path.home() / '.local/bin'))))
+bin_dir = Path(os.environ.get('BIN_DIR', str(Path.home() / '.local/bin')))
+secret_path = (
+    Path(os.environ.get('PREFIX_DIR', str(Path.home() / '.local/share/chatgpt-cli')))
+    / 'secret.enc'
+)
+finalize(['gpt', 'gpt-gui'], bin_dir, secret_path)
 PY
