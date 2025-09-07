@@ -91,10 +91,24 @@ def save_api_key(
 
     loc.ensure_dir()
     data = cipher.encrypt(api_key, password)
-    fd = os.open(loc.path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-    with os.fdopen(fd, "wb") as f:
-        f.write(data)
-    os.chmod(loc.path, 0o600)
+    fd: int | None = None
+    try:
+        fd = os.open(loc.path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.chmod(loc.path, 0o600)
+    except Exception:
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        try:
+            if loc.path.exists():
+                loc.path.unlink()
+        except OSError:
+            pass
+        raise
 
 
 def load_api_key(
