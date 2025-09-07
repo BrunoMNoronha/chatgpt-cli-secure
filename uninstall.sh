@@ -25,6 +25,15 @@ done
 rm -f "$BIN_DIR/gpt" "$BIN_DIR/gpt-gui"
 rm -f "$APP_DIR/chatgpt-gui.desktop"
 
+# Remove $BIN_DIR from common shell configuration files
+for file in "$HOME/.bashrc" "$HOME/.profile"; do
+  if [ -f "$file" ] && grep -q "$BIN_DIR" "$file"; then
+    tmp_file="$(mktemp)"
+    grep -v "$BIN_DIR" "$file" > "$tmp_file"
+    mv "$tmp_file" "$file"
+  fi
+done
+
 if [ "$PURGE" = true ]; then
   rm -rf "$PREFIX_DIR"
   rm -rf "$STATE_DIR"
@@ -39,3 +48,4 @@ if [ "$PURGE" = true ] || [ "$REMOVE_DEPS" = true ]; then
 fi
 
 echo "Desinstalação concluída."
+echo "Você pode precisar reiniciar a sessão para que as mudanças no PATH tenham efeito."
