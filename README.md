@@ -108,6 +108,9 @@ O diretório `~/.local/bin` precisa estar no `PATH` para que `gpt` e `gpt-gui` f
 
 > **Nota:** Após a instalação, talvez seja necessário reindexar o menu de aplicativos (ou reiniciar o ambiente gráfico) para que o atalho apareça.
 
+> **Pré-requisito:** antes de usar `gpt` ou `gpt-gui`, execute `bash "$PREFIX_DIR/gpt-secure-setup.sh"` para armazenar a chave API de forma criptografada.  
+> **Alternativa menos segura:** exporte `OPENAI_API_KEY` manualmente (`export OPENAI_API_KEY="sua_chave"`); ⚠️ a chave ficará exposta em texto claro no ambiente.
+
 ## Uso da CLI
 
 ### Envio básico
