@@ -13,7 +13,7 @@ if command -v rsync >/dev/null 2>&1; then
   rsync -a --delete --exclude '.git/' ./ "$PREFIX_DIR/"
 else
   mkdir -p "$PREFIX_DIR"
-  cp -rf chatgpt_cli gpt-gui.sh gpt-secure-setup.sh update.sh check-update.sh version.txt README.md LICENSE "$PREFIX_DIR/"
+  cp -rf chatgpt_cli gpt-gui.sh gpt_secure_setup.py update.sh check-update.sh version.txt README.md LICENSE "$PREFIX_DIR/"
   mkdir -p "$PREFIX_DIR/wrappers" "$PREFIX_DIR/desktop"
   cp -f wrappers/gpt wrappers/gpt-gui "$PREFIX_DIR/wrappers/"
   cp -f desktop/chatgpt-gui.desktop "$PREFIX_DIR/desktop/"
@@ -67,7 +67,7 @@ def finalize(commands: List[str], bin_dir: Path, secret: Path) -> None:
         print("Instalação concluída. Use 'gpt' para a CLI e 'gpt-gui' para a GUI.")
         return
     print(
-        "Instalação concluída. Execute 'gpt-secure-setup.sh' para configurar a API key."
+        "Instalação concluída. Execute 'gpt_secure_setup.py' para configurar a API key."
     )
 
 
