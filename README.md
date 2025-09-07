@@ -71,12 +71,15 @@ git clone https://github.com/BrunoMNoronha/chatgpt-cli-secure.git
 cd chatgpt-cli-secure
 PREFIX_DIR=~/.local/share/chatgpt-cli bash install.sh
 bash $PREFIX_DIR/gpt-secure-setup.sh
+export PATH="$HOME/.local/bin:$PATH"
 gpt "Olá"
 gpt-gui
 ```
 
 > Use `PREFIX_DIR=/caminho/desejado` para instalar em outro diretório.
 > Após a instalação, talvez seja necessário reindexar o menu de aplicativos (ex.: `update-desktop-database ~/.local/share/applications`).
+
+O diretório `~/.local/bin` precisa estar no `PATH` para que `gpt` e `gpt-gui` funcionem. **Alternativa mais performática:** adicione `export PATH="$HOME/.local/bin:$PATH"` ao arquivo de inicialização (`~/.bashrc` ou `~/.zshrc`), evitando executá-la manualmente a cada sessão.
 
 ## Instalação
 
@@ -91,7 +94,13 @@ gpt-gui
     ```
     O instalador copia os arquivos para `$PREFIX_DIR` (padrão `~/.local/share/chatgpt-cli/`), instala wrappers (`gpt` e `gpt-gui`) em `~/.local/bin/` e cria um atalho de desktop em `~/.local/share/applications/`. Também cria, caso não exista, o arquivo de configuração em `~/.config/chatgpt-cli/config`.
 
-4. Configure a chave da OpenAI de forma segura executando:
+4. Garanta que `~/.local/bin` esteja no `PATH`:
+    ```bash
+    export PATH="$HOME/.local/bin:$PATH"
+    ```
+    Sem isso, `gpt` e `gpt-gui` não funcionarão. **Alternativa mais performática:** adicione a linha acima ao arquivo de inicialização (`~/.bashrc` ou `~/.zshrc`) para evitar executá-la manualmente a cada sessão.
+
+5. Configure a chave da OpenAI de forma segura executando:
     ```bash
     bash "$PREFIX_DIR/gpt-secure-setup.sh"
     ```
