@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
+import sys
 from typing import Dict, NoReturn
 
 
@@ -13,16 +13,26 @@ def main() -> NoReturn:
     """Run the package entry point relative to this wrapper.
 
     Emprega ``os.execvpe`` para substituir o processo atual por
-    ``python -m chatgpt_cli``, eliminando overhead de criação de filho. Uma
-    alternativa, um pouco mais lenta porém mais controlável, seria
-    ``subprocess.run``.
+    ``python -m chatgpt_cli``, eliminando overhead de criação de filho.
+    Uma alternativa mais simples é um *wrapper* em ``sh`` com ``exec`` para
+    ``python -m chatgpt_cli``, evitando inicializar o Python apenas para
+    redirecionar o processo.
     """
     script_dir: Path = Path(__file__).resolve().parent
     repo_root: Path = script_dir.parent
     os.chdir(repo_root)
     env: Dict[str, str] = os.environ.copy()
+    # Falha rápida se a chave não estiver configurada, orientando o usuário.
+    if "OPENAI_API_KEY" not in env:
+        msg: str = (
+            "Chave OpenAI ausente. Execute 'gpt-secure-setup.sh' para configurá-la."
+        )
+        print(msg, file=sys.stderr)
+        raise SystemExit(1)
     pythonpath: str = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = f"{repo_root}{os.pathsep}{pythonpath}" if pythonpath else str(repo_root)
+    env["PYTHONPATH"] = (
+        f"{repo_root}{os.pathsep}{pythonpath}" if pythonpath else str(repo_root)
+    )
     os.execvpe(sys.executable, [sys.executable, "-m", "chatgpt_cli", *sys.argv[1:]], env)
 
 
