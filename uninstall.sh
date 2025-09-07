@@ -38,7 +38,7 @@ if [ "$PURGE" = true ]; then
   rm -rf "$PREFIX_DIR"
   rm -rf "$STATE_DIR"
   rm -rf "$SHARE_DIR" "$CONFIG_DIR"
-  rm -f "$SHARE_DIR/secret.enc"
+  rm -f "$SHARE_DIR/secret.txt"
   rm -f "$CONFIG_DIR/config"
   echo "Todos os dados e scripts foram removidos."
 fi

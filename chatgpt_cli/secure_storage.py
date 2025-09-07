@@ -1,9 +1,8 @@
-"""Armazena a chave da API de forma segura usando AES-GCM.
+"""Armazena a chave da API em texto puro.
 
-Implementa classes e funções com *type hints* e utiliza o padrão *Strategy*
-para permitir diferentes cifradores de chave. Uma alternativa mais performática
-seria gravar a chave sem criptografia, evitando PBKDF2, porém isso sacrificaria
-completamente a segurança.
+Uma alternativa **mais segura**, porém menos performática, seria empregar
+AES-GCM com derivação PBKDF2 para criptografar a chave antes de persistir no
+disco.
 """
 
 from __future__ import annotations
@@ -11,20 +10,14 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
-
-from cryptography.exceptions import InvalidTag
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
 @dataclass(frozen=True)
 class KeyLocation:
-    """Define a localização padrão do arquivo criptografado."""
+    """Define a localização padrão do arquivo de chave."""
 
     base_dir: Path = Path.home() / ".local/share/chatgpt-cli"
-    file_name: str = "secret.enc"
+    file_name: str = "secret.txt"
 
     def ensure_dir(self) -> None:
         """Garante que o diretório exista."""
@@ -36,67 +29,20 @@ class KeyLocation:
         return self.base_dir / self.file_name
 
 
-class KeyCipher(Protocol):
-    """Define a interface para cifradores de chave."""
+def save_api_key(api_key: str, *, loc: KeyLocation = KeyLocation()) -> None:
+    """Salva a chave API em texto puro.
 
-    def encrypt(self, key: str, password: str) -> bytes:
-        """Criptografa ``key`` usando ``password``."""
-
-    def decrypt(self, data: bytes, password: str) -> str:
-        """Descriptografa ``data`` usando ``password``."""
-
-
-class AesGcmCipher:
-    """Cifrador baseado em AES-GCM com derivação PBKDF2."""
-
-    def __init__(self, iterations: int = 200_000, key_size: int = 32) -> None:
-        self.iterations = iterations
-        self.key_size = key_size
-
-    def _derive_key(self, password: str, salt: bytes) -> bytes:
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=self.key_size,
-            salt=salt,
-            iterations=self.iterations,
-        )
-        return kdf.derive(password.encode())
-
-    def encrypt(self, key: str, password: str) -> bytes:
-        salt = os.urandom(16)
-        nonce = os.urandom(12)
-        aesgcm = AESGCM(self._derive_key(password, salt))
-        ciphertext = aesgcm.encrypt(nonce, key.encode(), None)
-        return salt + nonce + ciphertext
-
-    def decrypt(self, data: bytes, password: str) -> str:
-        if len(data) < 28:
-            raise ValueError("dados inválidos")
-        salt, nonce, ciphertext = data[:16], data[16:28], data[28:]
-        aesgcm = AESGCM(self._derive_key(password, salt))
-        plaintext = aesgcm.decrypt(nonce, ciphertext, None)
-        return plaintext.decode()
-
-
-def save_api_key(
-    api_key: str,
-    password: str,
-    *,
-    loc: KeyLocation = KeyLocation(),
-    cipher: KeyCipher = AesGcmCipher(),
-) -> None:
-    """Salva a chave API criptografada no disco.
-
-    Usa ``os.open`` para controlar permissões ``0o600`` na criação do arquivo.
+    Utiliza ``os.open`` para controlar permissões ``0o600`` ao criar o arquivo.
+    Uma alternativa mais performática seria usar ``Path.write_text``, mas isso
+    reduziria o controle explícito sobre as permissões.
     """
 
     loc.ensure_dir()
-    data = cipher.encrypt(api_key, password)
     fd: int | None = None
     try:
         fd = os.open(loc.path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
-        with os.fdopen(fd, "wb") as f:
-            f.write(data)
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(api_key)
         os.chmod(loc.path, 0o600)
     except Exception:
         if fd is not None:
@@ -112,24 +58,8 @@ def save_api_key(
         raise
 
 
-def load_api_key(
-    password: str,
-    *,
-    loc: KeyLocation = KeyLocation(),
-    cipher: KeyCipher = AesGcmCipher(),
-) -> str:
-    """Carrega e descriptografa a chave API.
+def load_api_key(*, loc: KeyLocation = KeyLocation()) -> str:
+    """Carrega a chave API em texto puro."""
 
-    Raises
-    ------
-    ValueError
-        Se a chave não puder ser descriptografada. Isso pode ocorrer quando a
-        senha estiver incorreta ou o arquivo de chave estiver corrompido.
-    """
+    return loc.path.read_text(encoding="utf-8")
 
-    data = loc.path.read_bytes()
-    try:
-        return cipher.decrypt(data, password)
-    except (InvalidTag, ValueError) as exc:  # pragma: no cover - cryptography may raise either
-        msg = "senha incorreta ou dados corrompidos"
-        raise ValueError(msg) from exc

@@ -74,7 +74,7 @@ def finalize(commands: List[str], bin_dir: Path, secret: Path) -> None:
 bin_dir = Path(os.environ.get('BIN_DIR', str(Path.home() / '.local/bin')))
 secret_path = (
     Path(os.environ.get('PREFIX_DIR', str(Path.home() / '.local/share/chatgpt-cli')))
-    / 'secret.enc'
+    / 'secret.txt'
 )
 finalize(['gpt', 'gpt-gui'], bin_dir, secret_path)
 PY
