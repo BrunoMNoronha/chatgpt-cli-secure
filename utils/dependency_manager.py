@@ -32,13 +32,17 @@ def dependency_in_use(package: str) -> bool:
     return False
 
 def remove_dependencies(packages: Iterable[str]) -> None:
-    """Uninstall packages that are not required by others."""
-    for package in packages:
-        if not dependency_in_use(package):
-            subprocess.run(
-                ["pip", "uninstall", "--yes", package],
-                check=False,
-            )
+    """Uninstall packages that are not required by others.
+
+    Uninstalls are accumulated and executed in a single ``pip`` call for
+    efficiency.
+    """
+    unused: list[str] = [pkg for pkg in packages if not dependency_in_use(pkg)]
+    if unused:
+        subprocess.run(
+            ["pip", "uninstall", "--yes", *unused],
+            check=False,
+        )
 
 def main() -> None:
     remove_dependencies(_read_dependencies())
