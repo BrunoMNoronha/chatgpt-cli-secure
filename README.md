@@ -1,6 +1,6 @@
 # chatgpt-cli-secure v1.2.1
 
-**chatgpt-cli-secure** é uma interface leve para ChatGPT sem navegador, oferecendo tanto linha de comando (CLI) quanto interface gráfica com Zenity (GUI). O foco está em usabilidade e segurança, armazenando a chave de API criptografada e proporcionando histórico, sessões e suporte a anexos.
+**chatgpt-cli-secure** é uma interface leve para ChatGPT sem navegador, oferecendo tanto linha de comando (CLI) quanto interface gráfica com Zenity (GUI). O foco está em usabilidade, armazenando a chave de API em texto puro e proporcionando histórico, sessões e suporte a anexos.
 
 ## Recursos principais
 
@@ -21,8 +21,7 @@
   - Configuração segura da chave API.
 
 - **Segurança**:
-  - A chave da API é armazenada criptografada em `~/.local/share/chatgpt-cli/secret.enc` usando AES‑256‑CBC, PBKDF2 com 200 000 iterações e SHA‑256.
-  - Nunca é gravada em texto claro; é exportada para processos filhos via variável de ambiente apenas durante a execução.
+  - A chave da API é armazenada em texto puro em `~/.local/share/chatgpt-cli/secret.txt`. Uma alternativa mais segura, embora menos performática, seria criptografar a chave com AES‑GCM e PBKDF2.
   - O histórico e as sessões são armazenados respeitando os padrões XDG (em `~/.local/state/chatgpt-cli/`).
 
 - **Sistema de atualização**:
@@ -100,16 +99,16 @@ O diretório `~/.local/bin` precisa estar no `PATH` para que `gpt` e `gpt-gui` f
     ```
     Sem isso, `gpt` e `gpt-gui` não funcionarão. **Alternativa mais performática:** adicione a linha acima ao arquivo de inicialização (`~/.bashrc` ou `~/.zshrc`) para evitar executá-la manualmente a cada sessão.
 
-5. Configure a chave da OpenAI de forma segura executando:
+5. Configure a chave da OpenAI executando:
     ```bash
     python "$PREFIX_DIR/gpt_secure_setup.py"
     ```
-   Você informará sua API key e uma senha mestra. A chave ficará criptografada em `~/.local/share/chatgpt-cli/secret.enc`.
+   Você informará sua API key. A chave ficará armazenada em `~/.local/share/chatgpt-cli/secret.txt`.
 
 > **Nota:** Após a instalação, talvez seja necessário reindexar o menu de aplicativos (ou reiniciar o ambiente gráfico) para que o atalho apareça.
 
-> **Pré-requisito:** antes de usar `gpt` ou `gpt-gui`, execute `python "$PREFIX_DIR/gpt_secure_setup.py"` para armazenar a chave API de forma criptografada.
-> **Alternativa menos segura:** exporte `OPENAI_API_KEY` manualmente (`export OPENAI_API_KEY="sua_chave"`); ⚠️ a chave ficará exposta em texto claro no ambiente.
+> **Pré-requisito:** antes de usar `gpt` ou `gpt-gui`, execute `python "$PREFIX_DIR/gpt_secure_setup.py"` para armazenar a chave API.
+> **Alternativa mais performática e menos segura:** exporte `OPENAI_API_KEY` manualmente (`export OPENAI_API_KEY="sua_chave"`); a chave ficará exposta em texto claro no ambiente.
 
 ## Uso da CLI
 
@@ -150,7 +149,7 @@ Execute:
 gpt-gui
 ```
 
-Na primeira execução, a interface pedirá sua senha mestra para descriptografar a chave. O menu inicial oferece:
+Na primeira execução, a interface carregará a chave salva. O menu inicial oferece:
 
 1. **Perguntar ao ChatGPT** – abre um formulário para digitar a pergunta, selecionar o modelo e os anexos. Após a resposta, você pode copiá-la para o clipboard ou fazer outra pergunta.
 2. **Checar atualização** – verifica se há nova versão disponível e oferece instalá-la.
@@ -159,7 +158,7 @@ Na primeira execução, a interface pedirá sua senha mestra para descriptografa
 5. **Configurar chave** – executa o script de configuração segura para alterar sua API key.
 6. **Sair** – encerra a GUI.
 
-A GUI utiliza `zenity --password` para a senha mestra, `zenity --list`/`--entry` para formulários e `zenity --info` para mostrar a resposta.
+A GUI utiliza `zenity --list`/`--entry` para formulários e `zenity --info` para mostrar a resposta.
 
 ## Configuração
 
@@ -237,7 +236,7 @@ bash uninstall.sh --purge
 
 - A chave da API é criptografada via `openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 -salt` e nunca é salva em texto plano.
 - A GUI exporta a chave para os processos `gpt` usando uma variável de ambiente apenas no momento da execução (`env OPENAI_API_KEY=... command`). Após a chamada, o script remove (`unset`) a variável de seu próprio ambiente.
-- Para maior segurança, **não compartilhe sua senha mestra** e proteja seu diretório pessoal.
+- Para maior segurança, proteja seu diretório pessoal.
 - Outros processos rodando com o mesmo usuário podem, em teoria, listar variáveis de ambiente de processos filhos enquanto eles estão ativos. Evite executar múltiplas instâncias simultâneas e mantenha o sistema atualizado.
 - Se desejar trocar de modelo ou temperatura temporariamente, defina `OPENAI_MODEL` e/ou `OPENAI_TEMP` somente no momento da execução e não deixe essas variáveis permanentemente expostas.
 
@@ -251,27 +250,27 @@ openssl rand -base64 48
 # Alternativa mais performática usando /dev/urandom e filtros simples
 tr -dc '[:alnum:]' < /dev/urandom | head -c 64; echo
 ```
-Aumente a entropia combinando letras maiúsculas, minúsculas, números e símbolos. Armazene a senha em um gerenciador seguro e evite reutilizá-la.
 
-#### Verificação de permissões em `secret.enc`
+
+#### Verificação de permissões em `secret.txt`
 ```bash
 # Confere e corrige permissões restritivas
-ls -l ~/.local/share/chatgpt-cli/secret.enc
-chmod 600 ~/.local/share/chatgpt-cli/secret.enc
+ls -l ~/.local/share/chatgpt-cli/secret.txt
+chmod 600 ~/.local/share/chatgpt-cli/secret.txt
 
 # Alternativa mais rápida para checar o modo do arquivo
-stat -c '%a %n' ~/.local/share/chatgpt-cli/secret.enc
+stat -c '%a %n' ~/.local/share/chatgpt-cli/secret.txt
 ```
 O arquivo criptografado deve ser legível e gravável apenas pelo usuário. Permissões mais amplas podem expor a chave a terceiros.
 
-#### Rotina de troca da senha ou revogação da chave
+#### Rotina de revogação da chave
 ```bash
 # Remove o segredo atual e executa o assistente novamente
-rm ~/.local/share/chatgpt-cli/secret.enc
+rm ~/.local/share/chatgpt-cli/secret.txt
 python ~/.local/share/chatgpt-cli/gpt_secure_setup.py
 
 # Alternativa mais segura (sobrescreve antes de apagar)
-shred -u ~/.local/share/chatgpt-cli/secret.enc
+shred -u ~/.local/share/chatgpt-cli/secret.txt
 ```
 Refaça o processo sempre que suspeitar de comprometimento. A opção com `shred` é mais lenta, porém ajuda a impedir a recuperação do arquivo apagado.
 
@@ -287,7 +286,7 @@ Refaça o processo sempre que suspeitar de comprometimento. A opção com `shred
    ```bash
    python "$PREFIX_DIR/gpt_secure_setup.py"
    ```
-   Siga as instruções para inserir a API key e a senha mestra.
+   Siga as instruções para inserir a API key.
 
 3. **Testar CLI**:
    ```bash
@@ -310,7 +309,7 @@ Refaça o processo sempre que suspeitar de comprometimento. A opção com `shred
    As duas primeiras perguntas compartilham contexto, e a última remove a sessão.
 
 6. **Testar GUI**:
-   - Execute `gpt-gui` e insira a senha mestra.
+   - Execute `gpt-gui`.
    - Selecione **Perguntar ao ChatGPT**, digite uma pergunta e escolha o modelo.
    - Anexe arquivos se desejar, copie a resposta e faça outra pergunta.
    - Teste ativar uma sessão pelo menu, depois limpar a sessão.

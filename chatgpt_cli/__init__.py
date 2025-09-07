@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import getpass
 import json
 import os
 import sys
@@ -82,14 +81,15 @@ def get_api_key() -> str:
     """Obtém a chave da API OpenAI.
 
     Emprega o padrão *Singleton* via ``lru_cache`` para armazenar a chave
-    após a primeira descriptografia, evitando invocações repetidas da rotina
-    de segurança. Uma alternativa ainda mais performática seria utilizar uma
-    variável global para cache manual, eliminando a sobrecarga do decorator,
-    porém dificultaria a limpeza em testes.
+    após a primeira leitura do disco, evitando acessos repetidos. Uma
+    alternativa mais performática seria utilizar uma variável global,
+    eliminando a sobrecarga do decorator, porém dificultando a limpeza em
+    testes.
 
-    Aplica também o padrão *Strategy* ao delegar a descriptografia para
+    Aplica também o padrão *Strategy* ao delegar a obtenção para
     ``load_api_key``.
     """
+
     api_key = os.environ.get("OPENAI_API_KEY")
     if api_key:
         return api_key
@@ -100,21 +100,9 @@ def get_api_key() -> str:
         )
         sys.exit(1)
     try:
-        password = os.environ.pop("OPENAI_MASTER_PASSWORD", None)
-        if not password:
-            password = getpass.getpass("Senha mestra: " )
+        return load_api_key(loc=location)
     except Exception:
-        sys.stderr.write("Erro ao ler senha.\n")
-        sys.exit(1)
-    if not password:
-        sys.stderr.write("Senha vazia.\n")
-        sys.exit(1)
-    try:
-        return load_api_key(password, loc=location)
-    except Exception:
-        sys.stderr.write(
-            "Erro: falha ao descriptografar a chave. Senha incorreta?\n"
-        )
+        sys.stderr.write("Erro: falha ao ler a chave.\n")
         sys.exit(1)
 
 def extract_text_from_data(data: Dict[str, Any]) -> str:

@@ -4,26 +4,14 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="$HOME/.config/chatgpt-cli"
-SECRET_FILE="$HOME/.local/share/chatgpt-cli/secret.enc"
+SECRET_FILE="$HOME/.local/share/chatgpt-cli/secret.txt"
 
 if [ ! -f "$SECRET_FILE" ]; then
     zenity --error --title="Erro" --text="Chave da API não encontrada. Execute gpt_secure_setup.py primeiro."
     exit 1
 fi
 
-MASTER_PASS=$(zenity --password --title="ChatGPT CLI Secure" --text="Digite a senha mestra para desbloquear a chave:")
-if [ $? -ne 0 ]; then exit 0; fi
-if [ -z "$MASTER_PASS" ]; then
-    zenity --error --text="Senha vazia."
-    exit 1
-fi
-
-OPENAI_API_KEY=$(printf '%s' "$MASTER_PASS" | openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 -salt -in "$SECRET_FILE" -pass stdin 2>/dev/null || true)
-unset MASTER_PASS
-if [ -z "$OPENAI_API_KEY" ]; then
-    zenity --error --text="Falha ao descriptografar a chave. Senha incorreta?"
-    exit 1
-fi
+OPENAI_API_KEY=$(cat "$SECRET_FILE")
 
 if [ -f "$CONFIG_DIR/config" ]; then
     . "$CONFIG_DIR/config"
@@ -151,13 +139,7 @@ while true; do
             ;;
         "Configurar chave")
             "$SCRIPT_DIR/gpt_secure_setup.py"
-            MASTER_PASS=$(zenity --password --title="ChatGPT CLI Secure" --text="Digite a senha mestra para desbloquear a chave:")
-            if [ $? -ne 0 ] || [ -z "$MASTER_PASS" ]; then
-                zenity --error --text="Senha vazia."
-                continue
-            fi
-            OPENAI_API_KEY=$(printf '%s' "$MASTER_PASS" | openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -md sha256 -salt -in "$SECRET_FILE" -pass stdin 2>/dev/null || true)
-            unset MASTER_PASS
+            OPENAI_API_KEY=$(cat "$SECRET_FILE")
             ;;
         "Sair")
             break
