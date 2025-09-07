@@ -18,8 +18,9 @@ def main() -> NoReturn:
     ``python -m chatgpt_cli``, evitando inicializar o Python apenas para
     redirecionar o processo.
     """
-    script_dir: Path = Path(__file__).resolve().parent
-    repo_root: Path = script_dir.parent
+    repo_root_env: str | None = os.environ.get("PREFIX_DIR")
+    default_repo: Path = Path.home() / ".local" / "share" / "chatgpt-cli"
+    repo_root: Path = Path(repo_root_env) if repo_root_env else default_repo
     os.chdir(repo_root)
     sys.path.insert(0, str(repo_root))
     env: Dict[str, str] = os.environ.copy()
