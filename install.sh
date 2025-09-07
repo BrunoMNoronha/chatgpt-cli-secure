@@ -37,4 +37,27 @@ if [ ! -f "$CONFIG" ]; then
   # *Guard Clause* para idempotência.
 fi
 
-echo "Instalação concluída. Use 'gpt' para a CLI e 'gpt-gui' para a GUI."
+# Verificar comandos instalados com *Guard Clause* e *type hints*.
+# Alternativa mais performática (menos portável): ``command -v gpt >/dev/null``
+# diretamente no shell.
+python3 - <<'PY'
+from __future__ import annotations
+import os
+import shutil
+from pathlib import Path
+from typing import List
+
+
+def verify(commands: List[str], bin_dir: Path) -> None:
+    missing: List[str] = [cmd for cmd in commands if shutil.which(cmd) is None]
+    if missing:
+        print(
+            f"Instalação concluída, mas {', '.join(missing)} não está no PATH."
+        )
+        print(f"Adicione {bin_dir} ao PATH para usá-los.")
+        return
+    print("Instalação concluída. Use 'gpt' para a CLI e 'gpt-gui' para a GUI.")
+
+
+verify(['gpt', 'gpt-gui'], Path(os.environ.get('BIN_DIR', str(Path.home() / '.local/bin'))))
+PY
