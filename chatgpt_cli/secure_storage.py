@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
 
+from cryptography.exceptions import InvalidTag
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -117,7 +118,18 @@ def load_api_key(
     loc: KeyLocation = KeyLocation(),
     cipher: KeyCipher = AesGcmCipher(),
 ) -> str:
-    """Carrega e descriptografa a chave API."""
+    """Carrega e descriptografa a chave API.
+
+    Raises
+    ------
+    ValueError
+        Se a chave não puder ser descriptografada. Isso pode ocorrer quando a
+        senha estiver incorreta ou o arquivo de chave estiver corrompido.
+    """
 
     data = loc.path.read_bytes()
-    return cipher.decrypt(data, password)
+    try:
+        return cipher.decrypt(data, password)
+    except (InvalidTag, ValueError) as exc:  # pragma: no cover - cryptography may raise either
+        msg = "senha incorreta ou dados corrompidos"
+        raise ValueError(msg) from exc
