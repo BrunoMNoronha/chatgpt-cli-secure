@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable
 import tomllib
 
 PYPROJECT = Path(__file__).resolve().parent.parent / "pyproject.toml"
 
-def _read_dependencies(pyproject_path: Path = PYPROJECT) -> List[str]:
+
+def _read_dependencies(pyproject_path: Path = PYPROJECT) -> list[str]:
     """Read project dependencies from pyproject.toml."""
     with pyproject_path.open("rb") as f:
         data = tomllib.load(f)
